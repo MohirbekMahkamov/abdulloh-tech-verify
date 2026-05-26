@@ -1,0 +1,35 @@
+# Node
+node_modules/
+.next/
+out/
+dist/
+
+# Java / Maven
+backend/target/
+*.class
+*.jar
+*.war
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Env
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+npm-debug.log*
+
+# Lock files (optional - keep package-lock.json)
+# package-lock.json
