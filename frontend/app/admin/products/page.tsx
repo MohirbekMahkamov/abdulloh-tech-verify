@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import AdminLayout from '../../../components/AdminLayout';
 import { adminApi } from '../../../lib/api';
-import { Product, Category, Batch, Dealer, Barcode } from '../../../types';
+import { Product, Category, Batch, Dealer, Barcode, SupplierInfo, ReceiverInfo } from '../../../types';
 import { toast } from 'react-hot-toast';
 import { Plus, Edit2, Trash2, X, Cpu, Info, Check, AlertTriangle, Printer, Barcode as BarcodeIcon } from 'lucide-react';
 import { BarcodePrintLabel } from '../../../components/BarcodePrintLabel';
@@ -18,11 +18,26 @@ export default function AdminProducts() {
   const [name, setName] = useState('');
   const [category, setCategory] = useState<Category>('ELECTRONICS');
   const [warranty, setWarranty] = useState('1 yil');
+  const [price, setPrice] = useState('5000000');
+  const [image, setImage] = useState('https://images.unsplash.com/photo-1588508065123-287b28e013da?auto=format&fit=crop&w=600&q=80');
+  const [description, setDescription] = useState('');
+  const [badge, setBadge] = useState('');
+  const [inStock, setInStock] = useState(true);
   // Specifications as dynamic key-value list
   const [specsList, setSpecsList] = useState<Array<{ key: string; value: string }>>([
-    { key: 'processor', value: 'Intel Core i5' },
-    { key: 'ram', value: '8GB DDR4' }
+    { key: 'protsessor', value: 'Intel Core i7-13700' },
+    { key: 'operativ xotira (RAM)', value: '16GB DDR5' }
   ]);
+
+  // Supplier (Yetkazib beruvchi) fields
+  const [supplierName, setSupplierName] = useState('');
+  const [supplierPhone, setSupplierPhone] = useState('');
+  const [supplierInn, setSupplierInn] = useState('');
+
+  // Receiver (Qabul qiluvchi) fields
+  const [receiverName, setReceiverName] = useState('');
+  const [receiverPhone, setReceiverPhone] = useState('');
+  const [receiverInn, setReceiverInn] = useState('');
 
   // Print Modal states
   const [printModalOpen, setPrintModalOpen] = useState(false);
@@ -100,7 +115,7 @@ export default function AdminProducts() {
       const timer = setTimeout(() => {
         window.print();
         setBarcodesToPrint([]);
-      }, 150);
+      }, 800);
       return () => clearTimeout(timer);
     }
   }, [barcodesToPrint]);
@@ -137,10 +152,21 @@ export default function AdminProducts() {
     setName('');
     setCategory('ELECTRONICS');
     setWarranty('1 yil');
+    setPrice('5000000');
+    setImage('https://images.unsplash.com/photo-1588508065123-287b28e013da?auto=format&fit=crop&w=600&q=80');
+    setDescription("XENOR X premium darajadagi kompyuter texnikasi.");
+    setBadge('YANGI');
+    setInStock(true);
     setSpecsList([
-      { key: 'ishlab chiqaruvchi', value: 'XENOR X' },
-      { key: 'model', value: 'Premium Edition' }
+      { key: 'protsessor', value: 'Intel Core i5-13400' },
+      { key: 'operativ xotira (RAM)', value: '8GB DDR4' }
     ]);
+    setSupplierName('');
+    setSupplierPhone('');
+    setSupplierInn('');
+    setReceiverName('');
+    setReceiverPhone('');
+    setReceiverInn('');
     setEditingId(null);
     setModalOpen(true);
   };
@@ -150,17 +176,52 @@ export default function AdminProducts() {
     setCategory(product.category);
     setWarranty(product.warrantyPeriod);
     
-    // Parse specs JSON
+    // Parse specs JSON and separate regular specs from store metadata keys
+    let parsed: any = {};
     try {
-      const parsed = JSON.parse(product.specs);
-      const list = Object.entries(parsed).map(([key, value]) => ({
-        key,
-        value: String(value)
-      }));
-      setSpecsList(list.length > 0 ? list : [{ key: '', value: '' }]);
+      parsed = JSON.parse(product.specs);
+      
+      const getVal = (keys: string[], fallback: any) => {
+        for (const key of keys) {
+          const foundKey = Object.keys(parsed).find(k => k.toLowerCase() === key.toLowerCase());
+          if (foundKey !== undefined) return parsed[foundKey];
+        }
+        return fallback;
+      };
+
+      setPrice(String(getVal(['price', 'narx'], '5000000')));
+      setImage(String(getVal(['image', 'rasm'], 'https://images.unsplash.com/photo-1588508065123-287b28e013da?auto=format&fit=crop&w=600&q=80')));
+      setDescription(String(getVal(['description', 'tavsif'], '')));
+      setBadge(String(getVal(['badge', 'nishon'], '')));
+      setInStock(String(getVal(['inStock', 'omborda'], 'true')).toLowerCase() === 'true');
+
+      // Regular specs list — no _logistics key needed
+      const metadataKeys = ['price', 'narx', 'image', 'rasm', 'description', 'tavsif', 'badge', 'nishon', 'instock', 'omborda'];
+      const list = Object.entries(parsed)
+        .filter(([key]) => !metadataKeys.includes(key.toLowerCase()))
+        .map(([key, value]) => ({
+          key,
+          value: String(value)
+        }));
+      setSpecsList(list.length > 0 ? list : [{ key: 'model', value: 'Premium Edition' }]);
     } catch (e) {
+      setPrice('5000000');
+      setImage('https://images.unsplash.com/photo-1588508065123-287b28e013da?auto=format&fit=crop&w=600&q=80');
+      setDescription('');
+      setBadge('');
+      setInStock(true);
       setSpecsList([{ key: 'xususiyat', value: product.specs }]);
     }
+
+    // Set supplier fields directly from product (now stored in proper DB columns)
+    setSupplierName(product.supplier?.name || '');
+    setSupplierPhone(product.supplier?.phone || '');
+    setSupplierInn(product.supplier?.inn || '');
+
+    // Set receiver fields directly from product
+    setReceiverName(product.receiver?.name || '');
+    setReceiverPhone(product.receiver?.phone || '');
+    setReceiverInn(product.receiver?.inn || '');
 
     setEditingId(product.id);
     setModalOpen(true);
@@ -173,20 +234,38 @@ export default function AdminProducts() {
       return;
     }
 
-    // Convert specs list to JSON string
+    // Convert specs list to JSON string (only real technical specs, no logistics)
     const specsObj: Record<string, string> = {};
     specsList.forEach(item => {
       if (item.key.trim()) {
         specsObj[item.key.trim()] = item.value.trim();
       }
     });
+
     const specsJson = JSON.stringify(specsObj);
+
+    // Build supplier info
+    const supplierInfo: SupplierInfo | undefined = supplierName.trim() ? {
+      name: supplierName.trim(),
+      phone: supplierPhone.trim(),
+      inn: supplierInn.trim()
+    } : undefined;
+
+    // Build receiver info
+    const receiverInfo: ReceiverInfo | undefined = receiverName.trim() ? {
+      name: receiverName.trim(),
+      phone: receiverPhone.trim(),
+      inn: receiverInn.trim()
+    } : undefined;
 
     const payload = {
       name,
       category,
       specs: specsJson,
-      warrantyPeriod: warranty
+      warrantyPeriod: warranty,
+      manufacturer: 'Xenor-X',
+      supplier: supplierInfo,
+      receiver: receiverInfo
     };
 
     try {
@@ -267,7 +346,7 @@ export default function AdminProducts() {
                     let shortSpecs = '';
                     try {
                       const parsed = JSON.parse(product.specs);
-                      shortSpecs = Object.entries(parsed).slice(0, 2).map(([k, v]) => `${k}: ${v}`).join(', ') + '...';
+                      shortSpecs = Object.entries(parsed).filter(([k]) => k !== '_logistics').slice(0, 2).map(([k, v]) => `${k}: ${v}`).join(', ') + '...';
                     } catch (e) {
                       shortSpecs = product.specs.slice(0, 30) + '...';
                     }
@@ -389,6 +468,78 @@ export default function AdminProducts() {
                   </div>
                 </div>
 
+
+                {/* Ishlab chiqaruvchi (Manufacturer) - always Xenor-X */}
+                <div className="space-y-2">
+                  <label className="text-xs uppercase font-mono tracking-widest text-slate-400">Ishlab chiqaruvchi</label>
+                  <input
+                    type="text"
+                    value="Xenor-X"
+                    readOnly
+                    className="w-full py-2.5 px-3.5 glass-input text-sm focus:outline-none opacity-60 cursor-not-allowed bg-emerald-500/5 border-emerald-500/20 text-emerald-400 font-bold"
+                  />
+                </div>
+
+                {/* Yetkazib beruvchi (Supplier) */}
+                <div className="space-y-3 p-3 rounded-xl bg-violet-500/5 border border-violet-500/10">
+                  <label className="text-xs uppercase font-mono tracking-widest text-violet-400 font-bold">Yetkazib beruvchi</label>
+                  <div className="grid grid-cols-1 gap-2">
+                    <input
+                      type="text"
+                      value={supplierName}
+                      onChange={(e) => setSupplierName(e.target.value)}
+                      placeholder="Nomi (masalan: XENOR-X MCHJ)"
+                      className="w-full py-2 px-3 glass-input text-xs focus:outline-none"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        value={supplierPhone}
+                        onChange={(e) => setSupplierPhone(e.target.value)}
+                        placeholder="Tel raqam"
+                        className="w-full py-2 px-3 glass-input text-xs focus:outline-none"
+                      />
+                      <input
+                        type="text"
+                        value={supplierInn}
+                        onChange={(e) => setSupplierInn(e.target.value)}
+                        placeholder="INN raqami"
+                        className="w-full py-2 px-3 glass-input text-xs focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Qabul qiluvchi (Receiver) */}
+                <div className="space-y-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10">
+                  <label className="text-xs uppercase font-mono tracking-widest text-amber-400 font-bold">Qabul qiluvchi</label>
+                  <div className="grid grid-cols-1 gap-2">
+                    <input
+                      type="text"
+                      value={receiverName}
+                      onChange={(e) => setReceiverName(e.target.value)}
+                      placeholder="Nomi (masalan: Namangan filiali)"
+                      className="w-full py-2 px-3 glass-input text-xs focus:outline-none"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        value={receiverPhone}
+                        onChange={(e) => setReceiverPhone(e.target.value)}
+                        placeholder="Tel raqam"
+                        className="w-full py-2 px-3 glass-input text-xs focus:outline-none"
+                      />
+                      <input
+                        type="text"
+                        value={receiverInn}
+                        onChange={(e) => setReceiverInn(e.target.value)}
+                        placeholder="INN raqami"
+                        className="w-full py-2 px-3 glass-input text-xs focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 {/* Specs List Builder */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -482,7 +633,18 @@ export default function AdminProducts() {
                     <label className="text-xs uppercase font-mono tracking-widest text-slate-400">Partiya (Batch) - Ixtiyoriy</label>
                     <select
                       value={selectedBatchId}
-                      onChange={(e) => setSelectedBatchId(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSelectedBatchId(val);
+                        if (val) {
+                          const batch = batches.find(b => b.id === Number(val));
+                          if (batch) {
+                            setPrintCount(batch.totalCount);
+                          }
+                        } else {
+                          setPrintCount(1);
+                        }
+                      }}
                       className="w-full py-2.5 px-3.5 glass-input text-xs focus:outline-none bg-[#111827] cursor-pointer"
                     >
                       <option value="">-- Tanlang (Partiyasiz) --</option>
@@ -516,7 +678,7 @@ export default function AdminProducts() {
                     <input
                       type="number"
                       min={1}
-                      max={100}
+                      max={1000}
                       value={printCount}
                       onChange={(e) => setPrintCount(Math.max(1, parseInt(e.target.value) || 1))}
                       className="w-full py-2.5 px-3.5 glass-input text-xs focus:outline-none"
@@ -561,7 +723,7 @@ export default function AdminProducts() {
                   </div>
                   
                   <p className="text-[9px] text-slate-500 text-center mt-3 font-mono">
-                    Haqiqiy o'lcham: 58mm x 40mm termal etiketka
+                    Haqiqiy o'lcham: 60mm x 40mm (XPrinter stiker - gorizontal)
                   </p>
                 </div>
               </form>

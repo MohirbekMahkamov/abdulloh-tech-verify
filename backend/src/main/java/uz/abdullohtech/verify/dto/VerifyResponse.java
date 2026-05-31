@@ -22,6 +22,19 @@ public class VerifyResponse {
     private DealerDetails dealer;
     private BatchDetails batch;
     private ScanDetails scanInfo;
+    private String manufacturer;
+    private LogisticsDetails supplier;
+    private LogisticsDetails receiver;
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class LogisticsDetails {
+        private String name;
+        private String phone;
+        private String inn;
+    }
 
     @Data
     @NoArgsConstructor

@@ -10,7 +10,7 @@ import {
 } from '../types';
 import { generateEAN13 } from './utils';
 
-const API_BASE_URL = 'http://localhost:8080/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://abdulloh-tech-production.up.railway.app/api/v1';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -35,10 +35,10 @@ api.interceptors.request.use(
 
 // --- Mock Database for Fallback Mode ---
 const mockProducts: Product[] = [
-  { id: 1, name: 'Monoblok XENOR X 27" 4K', category: 'ELECTRONICS', specs: '{"processor": "Intel Core i7 13700", "ram": "16GB DDR5", "storage": "1TB NVMe SSD", "screen": "27-inch 4K IPS UHD"}', warrantyPeriod: '1 yil' },
-  { id: 2, name: 'Interaktiv Panel XENOR Pro 86"', category: 'ELECTRONICS', specs: '{"os": "Android 12 / Windows 11", "touch": "40 points Multi-touch", "screen": "86-inch 4K UHD LED", "ram": "8GB", "storage": "128GB"}', warrantyPeriod: '2 yil' },
-  { id: 3, name: 'Laser Printer XENOR FastPrint 400', category: 'PRINTER', specs: '{"speed": "40 ppm", "resolution": "1200x1200dpi", "interfaces": "USB, Wi-Fi, Ethernet", "duplex": "Auto Duplex"}', warrantyPeriod: '1 yil' },
-  { id: 4, name: 'Ofis stoli Ergonomic Premium X', category: 'FURNITURE', specs: '{"material": "Premium MDF, Steel legs", "adjustments": "Electric Height Adjustable (70-120cm)", "load_capacity": "120kg"}', warrantyPeriod: '3 yil' },
+  { id: 1, name: 'Monoblok XENOR X 27" 4K', category: 'ELECTRONICS', specs: '{"processor": "Intel Core i7 13700", "ram": "16GB DDR5", "storage": "1TB NVMe SSD", "screen": "27-inch 4K IPS UHD"}', warrantyPeriod: '1 yil', manufacturer: 'Xenor-X', supplier: { name: 'XENOR-X MCHJ', phone: '+998500075500', inn: '123456789' }, receiver: { name: 'Namangan filiali', phone: '+998901234567', inn: '987654321' } },
+  { id: 2, name: 'Interaktiv Panel XENOR Pro 86"', category: 'ELECTRONICS', specs: '{"os": "Android 12 / Windows 11", "touch": "40 points Multi-touch", "screen": "86-inch 4K UHD LED", "ram": "8GB", "storage": "128GB"}', warrantyPeriod: '2 yil', manufacturer: 'Xenor-X', supplier: { name: 'XENOR-X MCHJ', phone: '+998500075500', inn: '123456789' }, receiver: { name: 'Toshkent filiali', phone: '+998901234500', inn: '111222333' } },
+  { id: 3, name: 'Laser Printer XENOR FastPrint 400', category: 'PRINTER', specs: '{"speed": "40 ppm", "resolution": "1200x1200dpi", "interfaces": "USB, Wi-Fi, Ethernet", "duplex": "Auto Duplex"}', warrantyPeriod: '1 yil', manufacturer: 'Xenor-X', supplier: { name: 'XENOR-X MCHJ', phone: '+998500075500', inn: '123456789' }, receiver: { name: 'Andijon filiali', phone: '+998901234503', inn: '444555666' } },
+  { id: 4, name: 'Ofis stoli Ergonomic Premium X', category: 'FURNITURE', specs: '{"material": "Premium MDF, Steel legs", "adjustments": "Electric Height Adjustable (70-120cm)", "load_capacity": "120kg"}', warrantyPeriod: '3 yil', manufacturer: 'Xenor-X', supplier: { name: 'XENOR-X MCHJ', phone: '+998500075500', inn: '123456789' }, receiver: { name: 'Farg\'ona filiali', phone: '+998901234504', inn: '777888999' } },
 ];
 
 const mockDealers: Dealer[] = [
@@ -80,6 +80,9 @@ const mockScanLogs: Array<{
 
 // Helper to determine if we should fallback to mock
 const isMockRequired = async (): Promise<boolean> => {
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return false;
+  }
   try {
     // Quick ping to check if server is active (using verify status or similar endpoint)
     await axios.get(`${API_BASE_URL}/verify/health-ping`, { timeout: 1000 }).catch(err => {
@@ -124,6 +127,9 @@ export const barcodeApi = {
           warranty: barcode.product.warrantyPeriod,
           specs: JSON.parse(barcode.product.specs),
         },
+        manufacturer: barcode.product.manufacturer || 'Xenor-X',
+        supplier: barcode.product.supplier,
+        receiver: barcode.product.receiver,
         certificates: ['ISO 9001:2015', 'CE'],
         dealer: barcode.dealer ? {
           name: barcode.dealer.name,
@@ -154,6 +160,15 @@ export const barcodeApi = {
       return barcodeApi.verify(code);
     }
     const res = await api.get<VerificationResponse>(`/verify/${code}`);
+    return res.data;
+  },
+
+  getPublicProducts: async (): Promise<Product[]> => {
+    const useMock = await isMockRequired();
+    if (useMock) {
+      return mockProducts;
+    }
+    const res = await api.get<Product[]>('/verify/products');
     return res.data;
   },
 };

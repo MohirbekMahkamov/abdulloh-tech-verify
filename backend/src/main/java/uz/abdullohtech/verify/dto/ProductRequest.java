@@ -7,9 +7,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import uz.abdullohtech.verify.entity.Product.Category;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ProductRequest {
 
     @NotBlank(message = "Nomi bo'sh bo'lmasligi kerak")
@@ -23,4 +26,26 @@ public class ProductRequest {
 
     @NotBlank(message = "Kafolat muddati bo'sh bo'lmasligi kerak")
     private String warrantyPeriod;
+
+    private String manufacturer;
+    private SupplierDetails supplier;
+    private ReceiverDetails receiver;
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class SupplierDetails {
+        private String name;
+        private String phone;
+        private String inn;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ReceiverDetails {
+        private String name;
+        private String phone;
+        private String inn;
+    }
 }

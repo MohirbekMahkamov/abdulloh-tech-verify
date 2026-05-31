@@ -9,9 +9,12 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class BatchRequest {
 
     @NotBlank(message = "Partiya kodi bo'sh bo'lmasligi kerak")

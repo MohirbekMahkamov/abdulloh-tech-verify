@@ -131,15 +131,8 @@ export default function AdminLogin() {
           </button>
         </form>
 
-        {/* Suggest credentials helper */}
-        <div className="flex items-center gap-3 p-3 rounded-2xl bg-sky-950/30 border border-sky-500/10 text-[11px] text-sky-300 max-w-sm mx-auto">
-          <ShieldAlert size={16} className="shrink-0 text-sky-400" />
-          <div>
-            Lokal testlash uchun:<br />
-            Email: <strong className="text-white">admin@abdulloh.tech</strong><br />
-            Parol: <strong className="text-white">Admin123!</strong>
-          </div>
-        </div>
+
+
       </div>
     </div>
   );

@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShieldCheck, LayoutDashboard } from 'lucide-react';
+import { ShieldCheck, LayoutDashboard, ShoppingBag, Home } from 'lucide-react';
 
 export default function Header() {
   return (
@@ -24,25 +24,39 @@ export default function Header() {
               XENOR X
             </span>
             <span className="text-[10px] text-sky-400 tracking-widest font-mono">
-              L-VERIFY PRO
+              COMPUTER TECHNOLOGY
             </span>
           </div>
         </Link>
 
-        <nav className="flex items-center gap-6">
+        <nav className="flex items-center gap-4 md:gap-6">
           <Link 
             href="/" 
             className="text-sm font-medium text-slate-300 hover:text-sky-400 transition-colors flex items-center gap-1.5"
           >
+            <Home size={16} />
+            <span className="hidden sm:inline">Bosh sahifa</span>
+          </Link>
+          <Link 
+            href="/store" 
+            className="text-sm font-medium text-slate-300 hover:text-sky-400 transition-colors flex items-center gap-1.5"
+          >
+            <ShoppingBag size={16} />
+            <span>Do&apos;kon</span>
+          </Link>
+          <Link 
+            href="/verify" 
+            className="text-sm font-medium text-slate-300 hover:text-sky-400 transition-colors flex items-center gap-1.5"
+          >
             <ShieldCheck size={16} />
-            Tekshirish
+            <span>Tekshirish</span>
           </Link>
           <Link 
             href="/admin/login" 
             className="text-sm font-medium text-slate-300 hover:text-sky-400 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white/5 border border-white/10 hover:bg-white/10"
           >
             <LayoutDashboard size={16} />
-            Dashboard
+            <span className="hidden sm:inline">Dashboard</span>
           </Link>
         </nav>
       </div>

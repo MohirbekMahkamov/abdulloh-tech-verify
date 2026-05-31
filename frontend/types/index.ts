@@ -1,11 +1,26 @@
 export type Category = 'ELECTRONICS' | 'PRINTER' | 'FURNITURE' | 'TEXTILE';
 
+export interface SupplierInfo {
+  name: string;
+  phone: string;
+  inn: string;
+}
+
+export interface ReceiverInfo {
+  name: string;
+  phone: string;
+  inn: string;
+}
+
 export interface Product {
   id: number;
   name: string;
   category: Category;
   specs: string; // JSON string
   warrantyPeriod: string;
+  manufacturer?: string; // Always 'Xenor-X'
+  supplier?: SupplierInfo;
+  receiver?: ReceiverInfo;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -57,6 +72,9 @@ export interface VerificationResponse {
     warranty: string;
     specs: Record<string, any>;
   };
+  manufacturer?: string;
+  supplier?: SupplierInfo;
+  receiver?: ReceiverInfo;
   certificates?: string[];
   dealer?: {
     name: string;
@@ -100,4 +118,24 @@ export interface DashboardStats {
     ipAddress: string;
     userAgent: string;
   }>;
+}
+
+// ===== Store Product (Do'kon uchun alohida) =====
+export type StoreCategory = 'monoblok' | 'panel' | 'printer' | 'furniture' | 'accessory';
+
+export interface StoreProductItem {
+  id: number;
+  name: string;
+  category: StoreCategory;
+  categoryLabel: string;
+  price: number;
+  oldPrice?: number;
+  image: string;
+  badge?: string;
+  specs: Record<string, string>;
+  description: string;
+  inStock: boolean;
+  warranty: string;
+  rating: number;
+  reviews: number;
 }

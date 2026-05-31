@@ -44,10 +44,11 @@ public class VerificationService {
         Barcode barcode = barcodeWrapper.barcode;
         ScanLog scanLog = barcodeWrapper.scanLog;
 
-        // Parse specifications
+        // Parse specifications — filter out internal keys like _logistics
         Map<String, Object> specsMap = new HashMap<>();
         try {
             specsMap = objectMapper.readValue(barcode.getProduct().getSpecs(), new TypeReference<Map<String, Object>>() {});
+            specsMap.remove("_logistics"); // remove internal key if exists from old data
         } catch (Exception e) {
             specsMap.put("error", "Xususiyatlarni o'qishda xatolik");
             specsMap.put("raw", barcode.getProduct().getSpecs());
@@ -90,6 +91,24 @@ public class VerificationService {
                 .firstScannedAt(firstScan)
                 .build();
 
+        VerifyResponse.LogisticsDetails supplierDetails = null;
+        if (barcode.getProduct().getSupplierName() != null) {
+            supplierDetails = VerifyResponse.LogisticsDetails.builder()
+                    .name(barcode.getProduct().getSupplierName())
+                    .phone(barcode.getProduct().getSupplierPhone())
+                    .inn(barcode.getProduct().getSupplierInn())
+                    .build();
+        }
+
+        VerifyResponse.LogisticsDetails receiverDetails = null;
+        if (barcode.getProduct().getReceiverName() != null) {
+            receiverDetails = VerifyResponse.LogisticsDetails.builder()
+                    .name(barcode.getProduct().getReceiverName())
+                    .phone(barcode.getProduct().getReceiverPhone())
+                    .inn(barcode.getProduct().getReceiverInn())
+                    .build();
+        }
+
         return VerifyResponse.builder()
                 .status("ORIGINAL")
                 .product(productDetails)
@@ -97,6 +116,9 @@ public class VerificationService {
                 .dealer(dealerDetails)
                 .batch(batchDetails)
                 .scanInfo(scanDetails)
+                .manufacturer(barcode.getProduct().getManufacturer() != null ? barcode.getProduct().getManufacturer() : "Xenor-X")
+                .supplier(supplierDetails)
+                .receiver(receiverDetails)
                 .build();
     }
 

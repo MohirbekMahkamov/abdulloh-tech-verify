@@ -66,24 +66,25 @@ REM ─────────────────────────�
 REM 3-QADAM: Git init va commit
 REM ──────────────────────────────────────────────────
 echo.
-echo [2/5] Git repository tayyorlanmoqda...
-
+echo [2/4] O'zgarishlar tekshirilmoqda...
 cd /d d:\Abdulloh-tech
 
-if exist ".git" (
-    echo [INFO] Git allaqachon ishga tushgan, davom etamiz...
+git add -A
+
+REM Check if there are changes to commit
+git diff --cached --quiet
+if %ERRORLEVEL% EQU 0 (
+    echo [INFO] Yangi o'zgarish topilmadi, lekin push qilinmoqda...
 ) else (
-    git init
-    echo [OK] Git repository yaratildi.
+    echo [3/4] Commit qilinmoqda...
+    for /f "tokens=2 delims==" %%a in ('wmic OS Get localdatetime /value') do set dt=%%a
+    set COMMIT_MSG=update: backend va frontend yangilandi - %dt:~0,8%-%dt:~8,6%
+    git commit -m "%COMMIT_MSG%"
+    echo [OK] Commit qilindi: %COMMIT_MSG%
 )
 
 echo.
-echo [3/5] Fayllar qo'shilmoqda...
-git add .
-git commit -m "feat: XENOR X L-Verify Pro - Product Verification System with all fixes applied"
-
-echo.
-echo [4/5] Remote ulanmoqda va kod yuborilmoqda...
+echo [4/4] GitHub-ga push qilinmoqda...
 git remote remove origin 2>nul
 git remote add origin %REPO_URL%
 git branch -M main

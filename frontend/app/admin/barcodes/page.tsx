@@ -78,7 +78,7 @@ export default function AdminBarcodes() {
       const timer = setTimeout(() => {
         window.print();
         setBarcodesToPrint([]);
-      }, 150);
+      }, 800);
       return () => clearTimeout(timer);
     }
   }, [barcodesToPrint]);

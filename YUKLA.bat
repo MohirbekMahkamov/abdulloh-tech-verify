@@ -5,89 +5,92 @@ color 0A
 
 echo.
 echo ========================================
-echo   ABDULLOH-TECH - GitHub-ga yuklanmoqda
+echo   ABDULLOH-TECH - GitHub Akkaunt Tuzatish
 echo ========================================
 echo.
 
 REM ── Git joylashuvini avtomatik topish ──
 set "GIT_CMD=git"
 
-REM Tekshirish: git PATH-da bormi?
 where git >nul 2>nul
 if %ERRORLEVEL% EQU 0 (
-    echo [OK] Git topildi: PATH orqali
-    goto :START_PUSH
+    set "GIT_CMD=git"
+    goto :FOUND
 )
-
-REM Keng tarqalgan joylashuvlarni tekshirish
 if exist "C:\Program Files\Git\bin\git.exe" (
     set "GIT_CMD=C:\Program Files\Git\bin\git.exe"
-    echo [OK] Git topildi: C:\Program Files\Git\bin\
-    goto :START_PUSH
+    goto :FOUND
 )
-
 if exist "C:\Program Files (x86)\Git\bin\git.exe" (
     set "GIT_CMD=C:\Program Files (x86)\Git\bin\git.exe"
-    echo [OK] Git topildi: C:\Program Files (x86)\Git\bin\
-    goto :START_PUSH
+    goto :FOUND
 )
-
 if exist "%LOCALAPPDATA%\Programs\Git\bin\git.exe" (
     set "GIT_CMD=%LOCALAPPDATA%\Programs\Git\bin\git.exe"
-    echo [OK] Git topildi: %LOCALAPPDATA%\Programs\Git\bin\
-    goto :START_PUSH
+    goto :FOUND
 )
-
-if exist "%USERPROFILE%\AppData\Local\Programs\Git\bin\git.exe" (
-    set "GIT_CMD=%USERPROFILE%\AppData\Local\Programs\Git\bin\git.exe"
-    echo [OK] Git topildi: AppData\Local\Programs\Git\bin\
-    goto :START_PUSH
-)
-
-REM Diskdan qidirish
-echo [INFO] Git qidirilmoqda...
-for /f "delims=" %%i in ('dir /s /b "C:\git.exe" 2^>nul') do (
-    set "GIT_CMD=%%i"
-    echo [OK] Git topildi: %%i
-    goto :START_PUSH
-)
-
-REM Git topilmadi - yuklab olish kerak
-echo.
-echo ╔════════════════════════════════════════════════════════╗
-echo ║  [XATO] Git kompyuteringizda o'rnatilmagan!           ║
-echo ║                                                        ║
-echo ║  Git-ni yuklab olish uchun quyidagi havola ochiladi:   ║
-echo ║  https://git-scm.com/download/win                      ║
-echo ║                                                        ║
-echo ║  O'rnatib bo'lgach, ushbu skriptni qayta ishga         ║
-echo ║  tushiring.                                            ║
-echo ╚════════════════════════════════════════════════════════╝
-echo.
-start https://git-scm.com/download/win
+echo [XATO] Git topilmadi!
 pause
 exit /b 1
 
-:START_PUSH
+:FOUND
+echo [OK] Git topildi!
 echo.
+
+REM ── 1-QADAM: Eski credentials o'chirish ──
+echo [1/6] Eski GitHub credentials o'chirilmoqda...
+cmdkey /delete:git:https://github.com 2>nul
+cmdkey /delete:LegacyGeneric:target=git:https://github.com 2>nul
+
+REM Windows Credential Manager dan ham o'chirish
+"%GIT_CMD%" credential reject <<EOF 2>nul
+protocol=https
+host=github.com
+EOF
+
+echo [OK] Eski credentials tozalandi.
+echo.
+
+REM ── 2-QADAM: Yangi akkaunt sozlash ──
+echo [2/6] Git akkaunt sozlanmoqda (MohirbekMahkamov)...
+"%GIT_CMD%" config --global user.name "MohirbekMahkamov"
+"%GIT_CMD%" config --global user.email "mohirbek@abdulloh.tech"
+echo [OK] Akkaunt sozlandi.
+echo.
+
+REM ── 3-QADAM: Repository ga o'tish ──
 cd /d d:\Abdulloh-tech
 
-echo [1/4] Git ishga tushirilmoqda...
-"%GIT_CMD%" init
+echo [3/6] Git repository tayyorlanmoqda...
+if not exist ".git" (
+    "%GIT_CMD%" init
+)
 
 echo.
-echo [2/4] Fayllar qo'shilmoqda...
+echo [4/6] Fayllar qo'shilmoqda...
 "%GIT_CMD%" add .
 
 echo.
-echo [3/4] Commit qilinmoqda...
-"%GIT_CMD%" commit -m "feat: XENOR X L-Verify Pro - Product Verification System"
+echo [5/6] Commit qilinmoqda...
+"%GIT_CMD%" commit -m "feat: XENOR X L-Verify Pro - Product Verification System" 2>nul
+if %ERRORLEVEL% NEQ 0 (
+    "%GIT_CMD%" commit --allow-empty -m "feat: XENOR X L-Verify Pro - Product Verification System"
+)
 
 echo.
-echo [4/4] GitHub-ga yuborilmoqda...
+echo [6/6] GitHub-ga yuborilmoqda...
 "%GIT_CMD%" remote remove origin 2>nul
 "%GIT_CMD%" remote add origin https://github.com/MohirbekMahkamov/abdulloh-tech-verify.git
 "%GIT_CMD%" branch -M main
+
+echo.
+echo ╔════════════════════════════════════════════════════════╗
+echo ║  Hozir GitHub login oynasi ochiladi.                   ║
+echo ║  MohirbekMahkamov akkauntingiz bilan kiring!           ║
+echo ║  (nurmuhamedovbotir334 EMAS!)                          ║
+echo ╚════════════════════════════════════════════════════════╝
+echo.
+
 "%GIT_CMD%" push -u origin main
 
 echo.
@@ -99,8 +102,15 @@ if %ERRORLEVEL% EQU 0 (
     echo   https://github.com/MohirbekMahkamov/abdulloh-tech-verify
     echo.
 ) else (
-    echo [XATO] Push amalga oshmadi.
-    echo Sabab: GitHub credentials yoki token kerak bo'lishi mumkin.
+    echo ════════════════════════════════════════
+    echo   AGAR YANA XATO BERSA:
+    echo ════════════════════════════════════════
+    echo.
+    echo   1. Windows qidiruv-ga "Credential Manager" yozing
+    echo   2. "Windows Credentials" bo'limini oching
+    echo   3. "git:https://github.com" yozuvini toping
+    echo   4. Uni o'chiring (Remove)
+    echo   5. Keyin ushbu skriptni qayta ishga tushiring
     echo.
 )
 

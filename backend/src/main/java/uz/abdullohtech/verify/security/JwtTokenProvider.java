@@ -25,8 +25,22 @@ public class JwtTokenProvider {
     private long jwtExpirationInMs;
 
     private SecretKey getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
-        return Keys.hmacShaKeyFor(keyBytes);
+        try {
+            byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+            if (keyBytes.length >= 32) {
+                return Keys.hmacShaKeyFor(keyBytes);
+            }
+        } catch (Exception e) {
+            // Fallback if not valid base64 or key is too short
+        }
+        
+        byte[] rawBytes = jwtSecret.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        if (rawBytes.length < 32) {
+            byte[] padded = new byte[32];
+            System.arraycopy(rawBytes, 0, padded, 0, Math.min(rawBytes.length, 32));
+            return Keys.hmacShaKeyFor(padded);
+        }
+        return Keys.hmacShaKeyFor(rawBytes);
     }
 
     public String generateToken(String email) {

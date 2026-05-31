@@ -42,10 +42,16 @@ export default function VerificationResult({ result, onReset }: VerificationResu
     );
   }
 
-  const { product, certificates, dealer, batch, scanInfo } = result;
+  const { product, certificates, dealer, batch, scanInfo, manufacturer, supplier, receiver } = result;
 
-  // Format specs nicely
-  const specs = product?.specs || {};
+  // Format specs nicely — filter out any legacy _logistics key just in case
+  const specs = Object.fromEntries(
+    Object.entries(product?.specs || {}).filter(([k]) => k !== '_logistics')
+  );
+
+  const supplierInfo = supplier;
+  const receiverInfo = receiver;
+  const manufacturerInfo = manufacturer || 'Xenor-X';
 
   return (
     <div className="glass-card max-w-2xl mx-auto rounded-3xl p-6 md:p-8 border-emerald-500/20 animate-fade-in relative overflow-hidden">
@@ -57,7 +63,7 @@ export default function VerificationResult({ result, onReset }: VerificationResu
         <div className="w-20 h-20 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 shadow-lg shadow-emerald-500/5">
           <CheckCircle2 size={48} className="animate-bounce" />
         </div>
-        <div className="text-center md:text-left flex-1">
+        <div className="text-center md:text-left flex-1 w-full">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 uppercase tracking-widest mb-2 font-mono">
             Original XENOR X Mahsuloti
           </div>
@@ -66,7 +72,36 @@ export default function VerificationResult({ result, onReset }: VerificationResu
           </h2>
           <p className="text-slate-400 text-xs mt-1 font-mono uppercase tracking-wider">
             Kategoriya: <span className="text-sky-400">{product?.category}</span>
+            {manufacturerInfo && <> · Ishlab chiqaruvchi: <span className="text-emerald-400 font-bold">{manufacturerInfo}</span></>}
           </p>
+          {(supplierInfo || receiverInfo || dealer) && (
+            <div className="mt-4 flex flex-col gap-2.5 text-xs font-mono uppercase">
+              {supplierInfo && (
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded text-[10px] bg-violet-500/10 text-violet-400 border border-violet-500/25 shrink-0 font-bold">
+                    Beruvchi:
+                  </span>
+                  <span className="text-slate-200 font-bold tracking-wide">{supplierInfo.name}</span>
+                </div>
+              )}
+              {receiverInfo && (
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/25 shrink-0 font-bold">
+                    Oluvchi:
+                  </span>
+                  <span className="text-slate-200 font-bold tracking-wide">{receiverInfo.name}</span>
+                </div>
+              )}
+              {dealer && (
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded text-[10px] bg-sky-500/10 text-sky-400 border border-sky-500/25 shrink-0 font-bold">
+                    Diler / Tashkilot:
+                  </span>
+                  <span className="text-sky-400 font-bold tracking-wide">{dealer.name} ({dealer.region})</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -116,7 +151,7 @@ export default function VerificationResult({ result, onReset }: VerificationResu
               Texnik Xarakteristikalar
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {Object.entries(specs).map(([key, value]) => (
+              {Object.entries(specs).filter(([key]) => key !== '_logistics').map(([key, value]) => (
                 <div key={key} className="p-3 bg-white/5 border border-white/5 rounded-xl">
                   <div className="text-[10px] text-slate-400 uppercase tracking-widest font-mono">
                     {key.replace('_', ' ')}
@@ -140,10 +175,72 @@ export default function VerificationResult({ result, onReset }: VerificationResu
         )}
 
         {activeTab === 'logistic' && (
-          <div className="space-y-4 animate-fade-in">
+          <div className="space-y-5 animate-fade-in">
+            {/* Ishlab chiqaruvchi */}
+            {manufacturerInfo && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold uppercase tracking-widest text-slate-400 flex items-center gap-1.5 font-mono">
+                  <ShieldCheck size={14} className="text-emerald-400" />
+                  Ishlab chiqaruvchi
+                </h3>
+                <div className="p-4 bg-emerald-500/5 border border-emerald-500/15 rounded-xl">
+                  <div className="text-lg font-black text-emerald-400 tracking-wider">{manufacturerInfo}</div>
+                </div>
+              </div>
+            )}
+
+            {/* Yetkazib beruvchi */}
+            {supplierInfo && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold uppercase tracking-widest text-slate-400 flex items-center gap-1.5 font-mono">
+                  <MapPin size={14} className="text-violet-400" />
+                  Yetkazib beruvchi
+                </h3>
+                <div className="p-4 bg-violet-500/5 border border-violet-500/15 rounded-xl space-y-3">
+                  <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                    <span className="text-xs text-slate-400 uppercase tracking-wider font-mono">Nomi</span>
+                    <span className="text-sm font-bold text-violet-400">{supplierInfo.name}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-slate-400 uppercase tracking-wider font-mono">Tel raqam</span>
+                    <span className="text-sm text-slate-200 font-mono">{supplierInfo.phone}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-slate-400 uppercase tracking-wider font-mono">INN</span>
+                    <span className="text-sm text-slate-200 font-mono font-bold">{supplierInfo.inn}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Qabul qiluvchi */}
+            {receiverInfo && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold uppercase tracking-widest text-slate-400 flex items-center gap-1.5 font-mono">
+                  <MapPin size={14} className="text-amber-400" />
+                  Qabul qiluvchi
+                </h3>
+                <div className="p-4 bg-amber-500/5 border border-amber-500/15 rounded-xl space-y-3">
+                  <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                    <span className="text-xs text-slate-400 uppercase tracking-wider font-mono">Nomi</span>
+                    <span className="text-sm font-bold text-amber-400">{receiverInfo.name}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-slate-400 uppercase tracking-wider font-mono">Tel raqam</span>
+                    <span className="text-sm text-slate-200 font-mono">{receiverInfo.phone}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-slate-400 uppercase tracking-wider font-mono">INN</span>
+                    <span className="text-sm text-slate-200 font-mono font-bold">{receiverInfo.inn}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Diler */}
             <h3 className="text-sm font-semibold uppercase tracking-widest text-slate-400 flex items-center gap-1.5 font-mono">
               <MapPin size={14} className="text-sky-400" />
-              Diler va Yetkazilgan Joy
+              Diler ma'lumotlari
             </h3>
             {dealer ? (
               <div className="p-4 bg-white/5 border border-white/5 rounded-xl space-y-3">
@@ -162,7 +259,7 @@ export default function VerificationResult({ result, onReset }: VerificationResu
               </div>
             ) : (
               <div className="p-4 bg-white/5 border border-white/5 rounded-xl text-center text-slate-400 text-sm">
-                Logistika ma'lumotlari kiritilmagan.
+                Diler ma'lumotlari kiritilmagan.
               </div>
             )}
           </div>

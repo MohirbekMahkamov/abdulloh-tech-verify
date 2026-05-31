@@ -13,9 +13,11 @@ import java.util.List;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final BarcodeService barcodeService;
 
-    public ProductService(ProductRepository productRepository) {
+    public ProductService(ProductRepository productRepository, BarcodeService barcodeService) {
         this.productRepository = productRepository;
+        this.barcodeService = barcodeService;
     }
 
     @Transactional(readOnly = true)
@@ -35,8 +37,20 @@ public class ProductService {
                 .category(request.getCategory())
                 .specs(request.getSpecs())
                 .warrantyPeriod(request.getWarrantyPeriod())
+                .supplierName(request.getSupplier() != null ? request.getSupplier().getName() : null)
+                .supplierPhone(request.getSupplier() != null ? request.getSupplier().getPhone() : null)
+                .supplierInn(request.getSupplier() != null ? request.getSupplier().getInn() : null)
+                .receiverName(request.getReceiver() != null ? request.getReceiver().getName() : null)
+                .receiverPhone(request.getReceiver() != null ? request.getReceiver().getPhone() : null)
+                .receiverInn(request.getReceiver() != null ? request.getReceiver().getInn() : null)
+                .manufacturer(request.getManufacturer() != null ? request.getManufacturer() : "Xenor-X")
                 .build();
-        return productRepository.save(product);
+        Product savedProduct = productRepository.save(product);
+        
+        // Auto generate EAN-13 barcode
+        barcodeService.generateBarcode(savedProduct.getId(), null, null);
+        
+        return savedProduct;
     }
 
     public Product updateProduct(Long id, ProductRequest request) {
@@ -45,6 +59,13 @@ public class ProductService {
         product.setCategory(request.getCategory());
         product.setSpecs(request.getSpecs());
         product.setWarrantyPeriod(request.getWarrantyPeriod());
+        product.setSupplierName(request.getSupplier() != null ? request.getSupplier().getName() : null);
+        product.setSupplierPhone(request.getSupplier() != null ? request.getSupplier().getPhone() : null);
+        product.setSupplierInn(request.getSupplier() != null ? request.getSupplier().getInn() : null);
+        product.setReceiverName(request.getReceiver() != null ? request.getReceiver().getName() : null);
+        product.setReceiverPhone(request.getReceiver() != null ? request.getReceiver().getPhone() : null);
+        product.setReceiverInn(request.getReceiver() != null ? request.getReceiver().getInn() : null);
+        product.setManufacturer(request.getManufacturer() != null ? request.getManufacturer() : "Xenor-X");
         return productRepository.save(product);
     }
 

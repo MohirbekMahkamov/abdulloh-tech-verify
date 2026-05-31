@@ -2,6 +2,8 @@ package uz.abdullohtech.verify.config;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
@@ -13,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class RateLimitingInterceptor implements HandlerInterceptor {
 
+    private static final Logger logger = LoggerFactory.getLogger(RateLimitingInterceptor.class);
     private final StringRedisTemplate redisTemplate;
 
     @Value("${app.rate-limit.max-requests:10}")
@@ -40,16 +43,28 @@ public class RateLimitingInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        String redisKey = "rate:limit:" + ipAddress + ":" + uri;
-
-        Long count = redisTemplate.opsForValue().increment(redisKey);
-
-        if (count != null && count == 1) {
-            redisTemplate.expire(redisKey, windowSeconds, TimeUnit.SECONDS);
+        // Bypass public products endpoint from rate limiting to prevent database/redis blockages
+        if (uri.endsWith("/products")) {
+            return true;
         }
 
-        if (count != null && count > maxRequests) {
-            throw new RateLimitExceededException("So'rovlar soni me'yordan oshib ketdi. Iltimos, " + windowSeconds + " soniyadan keyin qayta urinib ko'ring.");
+        String redisKey = "rate:limit:" + ipAddress + ":" + uri;
+
+        try {
+            Long count = redisTemplate.opsForValue().increment(redisKey);
+
+            if (count != null && count == 1) {
+                redisTemplate.expire(redisKey, windowSeconds, TimeUnit.SECONDS);
+            }
+
+            if (count != null && count > maxRequests) {
+                throw new RateLimitExceededException("So'rovlar soni me'yordan oshib ketdi. Iltimos, " + windowSeconds + " soniyadan keyin qayta urinib ko'ring.");
+            }
+        } catch (RateLimitExceededException e) {
+            throw e;
+        } catch (Exception e) {
+            // Graceful degradation: log warning and let request pass if Redis is down
+            logger.warn("Redis rate-limiter connection failed: {}. Bypassing rate limiting.", e.getMessage());
         }
 
         return true;

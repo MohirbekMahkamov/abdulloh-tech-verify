@@ -13,7 +13,8 @@ import {
   LogOut, 
   Menu, 
   X, 
-  User 
+  User,
+  ShoppingBag 
 } from 'lucide-react';
 import { adminApi } from '../lib/api';
 
@@ -55,6 +56,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { name: 'Partiyalar', href: '/admin/batches', icon: Calendar },
     { name: 'Dilerlar', href: '/admin/dealers', icon: MapPin },
     { name: 'Shtrix-kodlar', href: '/admin/barcodes', icon: ScanBarcode },
+    { name: "Do'kon", href: '/admin/store', icon: ShoppingBag },
   ];
 
   if (!adminUser) {
